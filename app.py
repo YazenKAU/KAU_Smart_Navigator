@@ -19,6 +19,24 @@ buildings = pd.read_csv(os.path.join(csv_folder, "Building_Points.csv"))
 routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes.csv"))
 images = pd.read_csv(os.path.join(csv_folder, "Mapillary_Images.csv"))
 
+# 🧠 DEBUG: Show all columns
+st.markdown("## 🧠 DEBUG: Column names in Building_Points.csv")
+st.write(buildings.columns.tolist())
+
+# Try to guess column names
+lat_col = None
+lon_col = None
+
+for col in buildings.columns:
+    if "y" in col.lower():
+        lat_col = col
+    if "x" in col.lower():
+        lon_col = col
+
+if not lat_col or not lon_col:
+    st.error("❌ Latitude/Longitude columns not found. Please export the CSV with coordinates (Shape_X / Shape_Y).")
+    st.stop()
+
 # Simulated GPS
 user_lat = 21.4932
 user_lon = 39.2465
@@ -45,7 +63,7 @@ if search_query:
         st.success(f"✅ Found {len(matches)} result(s):")
         for _, row in matches.iterrows():
             st.markdown(f"- **{row['BuildingAr']}**")
-            st.map(pd.DataFrame({"lat": [row["Shape_Y"]], "lon": [row["Shape_X"]]}))
+            st.map(pd.DataFrame({"lat": [row[lat_col]], "lon": [row[lon_col]]}))
     else:
         st.warning("⚠️ No matching buildings found.")
 
@@ -73,7 +91,7 @@ if show_location:
 # Building Markers
 for _, row in buildings.iterrows():
     folium.Marker(
-        location=[row["Shape_Y"], row["Shape_X"]],
+        location=[row[lat_col], row[lon_col]],
         popup=row["BuildingAr"],
         icon=folium.Icon(color="blue", icon="university", prefix="fa")
     ).add_to(m)
@@ -88,8 +106,8 @@ image_matches = []
 
 if not route_row.empty:
     coords = [
-        [from_row["Shape_Y"], from_row["Shape_X"]],
-        [to_row["Shape_Y"], to_row["Shape_X"]]
+        [from_row[lat_col], from_row[lon_col]],
+        [to_row[lat_col], to_row[lon_col]]
     ]
     folium.PolyLine(
         locations=coords,
