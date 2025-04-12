@@ -16,6 +16,9 @@ buildings = pd.read_csv(os.path.join(csv_folder, "Building_Points.csv"))
 routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes.csv"))
 images = pd.read_csv(os.path.join(csv_folder, "Mapillary_Images.csv"))
 
+# DEBUG (optional): Show available building columns
+# st.write("📋 Columns in Building_Points.csv:", buildings.columns.tolist())
+
 # Simulated GPS (for now)
 user_lat = 21.4932
 user_lon = 39.2465
@@ -50,8 +53,8 @@ if search_query:
 # === From / To
 from_row = buildings[buildings["BuildingAr"] == start].iloc[0]
 to_row = buildings[buildings["BuildingAr"] == end].iloc[0]
-from_id = from_row["OBJECTID"]
-to_id = to_row["OBJECTID"]
+from_id = from_row["ORIG_FID"]
+to_id = to_row["ORIG_FID"]
 
 # === Map
 map_center = [21.4926, 39.2468]
