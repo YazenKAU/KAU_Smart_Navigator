@@ -16,7 +16,7 @@ buildings = pd.read_csv(os.path.join(csv_folder, "Building_Points.csv"))
 routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes.csv"))
 images = pd.read_csv(os.path.join(csv_folder, "Mapillary_Images.csv"))
 
-# Simulated GPS (placeholder for future GPS support)
+# Simulated GPS (for now)
 user_lat = 21.4932
 user_lon = 39.2465
 
@@ -30,26 +30,26 @@ show_location = st.checkbox("📍 Show My Location")
 st.subheader("🧭 Choose Start and Destination")
 col1, col2 = st.columns(2)
 with col1:
-    start = st.selectbox("Start Building", buildings["Name"])
+    start = st.selectbox("Start Building", buildings["BuildingAr"])
 with col2:
-    end = st.selectbox("Destination Building", buildings["Name"])
+    end = st.selectbox("Destination Building", buildings["BuildingAr"])
 
 # === Search
 st.markdown("### 🔍 Search for a Building")
 search_query = st.text_input("Type building name...")
 if search_query:
-    matches = buildings[buildings["Name"].str.contains(search_query, case=False)]
+    matches = buildings[buildings["BuildingAr"].str.contains(search_query, case=False)]
     if not matches.empty:
         st.success(f"✅ Found {len(matches)} result(s):")
         for _, row in matches.iterrows():
-            st.markdown(f"- **{row['Name']}**")
+            st.markdown(f"- **{row['BuildingAr']}**")
             st.map(pd.DataFrame({"lat": [row["Latitude"]], "lon": [row["Longitude"]]}))
     else:
         st.warning("⚠️ No matching buildings found.")
 
 # === From / To
-from_row = buildings[buildings["Name"] == start].iloc[0]
-to_row = buildings[buildings["Name"] == end].iloc[0]
+from_row = buildings[buildings["BuildingAr"] == start].iloc[0]
+to_row = buildings[buildings["BuildingAr"] == end].iloc[0]
 from_id = from_row["OBJECTID"]
 to_id = to_row["OBJECTID"]
 
@@ -75,7 +75,7 @@ if show_location:
 for _, row in buildings.iterrows():
     folium.Marker(
         location=[row["Latitude"], row["Longitude"]],
-        popup=row["Name"],
+        popup=row["BuildingAr"],
         icon=folium.Icon(color="blue", icon="university", prefix="fa")
     ).add_to(m)
 
