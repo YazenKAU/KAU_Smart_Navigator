@@ -43,7 +43,7 @@ with col2:
     end = st.selectbox("Destination Building", buildings[name_field])
 
 # === Search
-st.markdown("### Search")
+st.markdown("### 🔍 Search for a Building")
 search_query = st.text_input("Type building name...")
 if search_query:
     matches = buildings[buildings[name_field].str.contains(search_query, case=False)]
