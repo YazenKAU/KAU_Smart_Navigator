@@ -7,34 +7,34 @@ from geopy.distance import geodesic
 from PIL import Image
 from time import sleep
 
-# === Set page config (MUST be first Streamlit command)
+# === Must be first
 st.set_page_config(page_title="KAU Smart Navigator", layout="wide")
 
-# === Paths ===
+# === Paths
 csv_folder = "AttributeTable"
 img_folder = "Images/images"
 
-# === Load Data ===
+# === Load Data
 buildings = pd.read_csv(os.path.join(csv_folder, "Building_Points.csv"))
 routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes.csv"))
 images = pd.read_csv(os.path.join(csv_folder, "Mapillary_Images.csv"))
 
-# === Field Mapping ===
+# === Field Names
 name_field = "BuildingAr"
 id_field = "ORIG_FID"
 lat_field = "Shape_Y"
 lon_field = "Shape_X"
 
-# === Simulated User Location (Optional) ===
+# === Simulated GPS Location
 user_lat = 21.4932
 user_lon = 39.2465
 
 st.title("📍 KAU Smart Navigator")
 
-# === Show My Location Toggle ===
+# === GPS Toggle
 show_location = st.checkbox("📍 Show My Location")
 
-# === Start / End Select Boxes ===
+# === Start / End Selection
 st.subheader("🧭 Choose Start and Destination")
 col1, col2 = st.columns(2)
 with col1:
@@ -42,7 +42,7 @@ with col1:
 with col2:
     end = st.selectbox("Destination Building", buildings[name_field])
 
-# === Search Bar ===
+# === Search
 st.markdown("### 🔍 Search for a Building")
 search_query = st.text_input("Type building name...")
 if search_query:
@@ -55,17 +55,17 @@ if search_query:
     else:
         st.warning("⚠️ No matching buildings found.")
 
-# === Route Coordinates
+# === Route Selection
 from_row = buildings[buildings[name_field] == start].iloc[0]
 to_row = buildings[buildings[name_field] == end].iloc[0]
 from_id = from_row[id_field]
 to_id = to_row[id_field]
 
-# === Base Map Center
+# === Map Setup
 map_center = [user_lat, user_lon] if show_location else [21.4926, 39.2468]
 m = folium.Map(location=map_center, zoom_start=16)
 
-# === Optional: Show Your Location
+# === GPS Marker
 if show_location:
     folium.CircleMarker(
         location=[user_lat, user_lon],
@@ -76,7 +76,7 @@ if show_location:
         popup="📍 You Are Here"
     ).add_to(m)
 
-# === Add Building Markers
+# === Building Markers
 for _, row in buildings.iterrows():
     folium.Marker(
         location=[row[lat_field], row[lon_field]],
@@ -84,28 +84,31 @@ for _, row in buildings.iterrows():
         icon=folium.Icon(color="blue", icon="university", prefix="fa")
     ).add_to(m)
 
-# === Draw Route if Exists
+# === Route Line
 route_row = routes[
     ((routes["FromID"] == from_id) & (routes["ToID"] == to_id)) |
     ((routes["FromID"] == to_id) & (routes["ToID"] == from_id))
 ]
 
-image_matches = []
+# === Default empty DataFrame for safety
+image_matches = pd.DataFrame()
 
 if not route_row.empty:
     coords = [
         [from_row[lat_field], from_row[lon_field]],
         [to_row[lat_field], to_row[lon_field]]
     ]
+
     folium.PolyLine(
         locations=coords,
         color="red",
         weight=5,
         tooltip=f"Distance: {route_row['Length'].values[0]:.1f} m, Time: {route_row['TravelTime'].values[0]:.1f} min"
     ).add_to(m)
+
     st.success("✅ Route displayed!")
 
-    # === Filter Images Along the Route
+    # === Filter photo points near route
     def is_nearby(lat, lon, threshold=0.05):
         pt = (lat, lon)
         return (
@@ -117,12 +120,13 @@ if not route_row.empty:
     image_matches = image_matches.sort_values(by="id")
 else:
     st.warning("⚠️ No route found between selected buildings.")
+    image_matches = pd.DataFrame()  # ✅ ensure it's always a DataFrame
 
-# === Render Map
+# === Display Map
 st.markdown("### 🗺️ Campus Map")
 st_data = st_folium(m, width=1200, height=500)
 
-# === Route Image Viewer
+# === Image Viewer
 if not image_matches.empty:
     st.markdown("### 🖼️ Visual Walkthrough")
     img_files = image_matches["photo_path"].apply(lambda p: os.path.basename(p)).tolist()
