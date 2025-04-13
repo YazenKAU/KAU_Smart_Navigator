@@ -16,7 +16,7 @@ img_folder = "Images/images"
 
 # === Load Data ===
 buildings = pd.read_csv(os.path.join(csv_folder, "Building_Points.csv"))
-routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes.csv"))
+routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes_With_Coords.csv"))
 images = pd.read_csv(os.path.join(csv_folder, "Mapillary_Images.csv"))
 
 # === Column Mappings ===
@@ -118,14 +118,10 @@ if not route_row.empty:
 
 else:
     st.warning("⚠️ No route match — drawing ALL available routes.")
-    # === Draw all routes using coords
     for _, r in routes.iterrows():
         if pd.notnull(r["From_Y"]) and pd.notnull(r["To_Y"]) and pd.notnull(r["From_X"]) and pd.notnull(r["To_X"]):
             folium.PolyLine(
-                locations=[
-                    [r["From_Y"], r["From_X"]],
-                    [r["To_Y"], r["To_X"]]
-                ],
+                locations=[[r["From_Y"], r["From_X"]], [r["To_Y"], r["To_X"]]],
                 color="orange",
                 weight=2
             ).add_to(m)
