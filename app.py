@@ -7,33 +7,35 @@ from geopy.distance import geodesic
 from PIL import Image
 from time import sleep
 
-# === Config ===
+# === Streamlit setup ===
 st.set_page_config(page_title="KAU Smart Navigator", layout="wide")
 
 # === Paths ===
 csv_folder = "AttributeTable"
 img_folder = "Images/images"
 
-# === Load CSVs ===
+# === Load Data ===
 buildings = pd.read_csv(os.path.join(csv_folder, "Building_Points.csv"))
 routes = pd.read_csv(os.path.join(csv_folder, "All_Solved_Routes.csv"))
 images = pd.read_csv(os.path.join(csv_folder, "Mapillary_Images.csv"))
 
-# === Column mappings
+# === Column Mappings ===
 name_field = "BuildingAr"
 id_field = "ORIG_FID"
 lat_field = "Shape_Y"
 lon_field = "Shape_X"
 
-# === Simulated user location
+# === Simulated GPS ===
 user_lat = 21.4932
 user_lon = 39.2465
 
-# === Title and options
+# === App Title ===
 st.title("📍 KAU Smart Navigator")
+
+# === Show Location Toggle ===
 show_location = st.checkbox("📍 Show My Location")
 
-# === Dropdowns
+# === Building Selection ===
 st.subheader("🧭 Choose Start and Destination")
 col1, col2 = st.columns(2)
 with col1:
@@ -41,7 +43,7 @@ with col1:
 with col2:
     end = st.selectbox("Destination Building", buildings[name_field])
 
-# === Search bar
+# === Search Bar ===
 st.markdown("### 🔍 Search for a Building")
 search_query = st.text_input("Type building name...")
 if search_query:
@@ -50,19 +52,15 @@ if search_query:
         st.success(f"✅ Found {len(matches)} result(s):")
         for _, row in matches.iterrows():
             st.markdown(f"- **{row[name_field]}**")
-            st.map(pd.DataFrame({"lat": [row[lat_field]], "lon": [row[lon_field]]}))
+            st.map(pd.DataFrame({'lat': [row[lat_field]], 'lon': [row[lon_field]]}))
     else:
         st.warning("⚠️ No matching buildings found.")
 
-# === Get building coordinates
-from_row = buildings[buildings[name_field] == start].iloc[0]
-to_row = buildings[buildings[name_field] == end].iloc[0]
-
-# === Create base map
+# === Map Setup ===
 map_center = [user_lat, user_lon] if show_location else [21.4926, 39.2468]
 m = folium.Map(location=map_center, zoom_start=16)
 
-# === Show GPS location
+# === Show User Location ===
 if show_location:
     folium.CircleMarker(
         location=[user_lat, user_lon],
@@ -73,7 +71,7 @@ if show_location:
         popup="📍 You Are Here"
     ).add_to(m)
 
-# === Show buildings on map
+# === Plot Buildings ===
 for _, row in buildings.iterrows():
     folium.Marker(
         location=[row[lat_field], row[lon_field]],
@@ -81,7 +79,9 @@ for _, row in buildings.iterrows():
         icon=folium.Icon(color="blue", icon="university", prefix="fa")
     ).add_to(m)
 
-# === Try route match
+# === Try to Match Route ===
+from_row = buildings[buildings[name_field] == start].iloc[0]
+to_row = buildings[buildings[name_field] == end].iloc[0]
 from_id = from_row[id_field]
 to_id = to_row[id_field]
 
@@ -105,7 +105,7 @@ if not route_row.empty:
     ).add_to(m)
     st.success("✅ Route displayed!")
 
-    # === Find nearby images
+    # === Nearby Image Filtering ===
     def is_nearby(lat, lon, threshold=0.05):
         pt = (lat, lon)
         return (
@@ -118,9 +118,9 @@ if not route_row.empty:
 
 else:
     st.warning("⚠️ No route match — drawing ALL available routes.")
-    # === Plot all routes visually
+    # === Draw all routes using coords
     for _, r in routes.iterrows():
-        if pd.notnull(r["From_Y"]) and pd.notnull(r["To_Y"]):
+        if pd.notnull(r["From_Y"]) and pd.notnull(r["To_Y"]) and pd.notnull(r["From_X"]) and pd.notnull(r["To_X"]):
             folium.PolyLine(
                 locations=[
                     [r["From_Y"], r["From_X"]],
@@ -130,11 +130,11 @@ else:
                 weight=2
             ).add_to(m)
 
-# === Map
+# === Display Map ===
 st.markdown("### 🗺️ Campus Map")
 st_data = st_folium(m, width=1200, height=500)
 
-# === Images Viewer
+# === Image Viewer ===
 if not image_matches.empty:
     st.markdown("### 🖼️ Visual Walkthrough")
     img_files = image_matches["photo_path"].apply(lambda p: os.path.basename(p)).tolist()
